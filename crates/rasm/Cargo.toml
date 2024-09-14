@@ -1,0 +1,17 @@
+[package]
+name = "rasm"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+16_args = []
+
+[dependencies]
+elf = "0.7.4"
+env_logger = "0.11.5"
+libc = "0.2.158"
+log = "0.4.22"
+typed-sexp.workspace = true

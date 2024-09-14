@@ -1,0 +1,20 @@
+[package]
+name = "typed-sexp"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+derive_more = { version = "1.0.0", features = ["deref", "deref_mut"] }
+itertools = "0.13.0"
+libR-sys = "0.7"
+
+[features]
+default = []
+checked_protect_stack = []
+embedded = []
+
+[workspace]
+members = ["crates/embedded-demo", "crates/extension-demo", "crates/rasm"]
+
+[workspace.dependencies]
+typed-sexp = { path = "." }

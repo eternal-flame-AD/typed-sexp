@@ -1,0 +1,13 @@
+Package: rasm
+Title: Inline Assembly For R
+Version: 0.0.0.9000
+Authors@R: 
+    person("Anne", "Fu", , "anne.fu@utdallas.edu", role = c("aut", "cre"),
+           comment = c(ORCID = "https://orcid.org/0000-0002-9025-6071"))
+Description: This is a dynamic loader and runtime linker for R. 
+                 Users can write inline assembly code in R and have them directly loaded into the R runtime.
+License: use_apache2_license()
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+NeedsCompilation: yes
