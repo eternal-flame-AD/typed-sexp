@@ -1,0 +1,4 @@
+(MIT OR Apache-2.0) AND Unicode-DFS-2016 (1): unicode-ident
+Apache-2.0 OR MIT (5): either, itertools, proc-macro2, quote, syn
+MIT (3): derive_more, derive_more-impl, libR-sys
+N/A (1): typed-sexp
