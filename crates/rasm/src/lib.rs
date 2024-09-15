@@ -124,6 +124,8 @@ macro_rules! generate_asmcall {
     ($($name:ident( $( $arg_name:ident: $arg_ty:ident ),*))*) => {
         $(
             /// Call a function by name.
+            #[cfg_attr(feature = "clobber_less", inline(never))] // let Rust clean up the registers as this function returns
+            #[cfg_attr(not(feature = "clobber_less"), inline)]
             pub unsafe fn $name<R $(, $arg_ty)*>(&self, name: &str $(, $arg_name: $arg_ty)*) -> R {
                     let func =
                         self.text.as_ptr()

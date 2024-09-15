@@ -8,6 +8,7 @@ crate-type = ["cdylib"]
 
 [features]
 16_args = []
+clobber_less = []
 
 [dependencies]
 elf = "0.7.4"
