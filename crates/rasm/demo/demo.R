@@ -13,11 +13,7 @@ assemble <- function(asm, flavor = "nasm") {
     .Call("asm_call", box, name, list(...))
 }
 
-code <- file("forkR.s", "r")
-
-asm <- assemble(paste(readLines(code), collapse = "\n"))
-
-pid <- .Asm(asm, "forkr")
+# Above is supposed to be part of the package, below is the demo code
 
 wait <- function(pid) {
     exit_labels <- c("exited", "killed", "dumped", "trapped", "stopped", "continued")
@@ -25,6 +21,12 @@ wait <- function(pid) {
     status <- .Asm(asm, "waitpidr", pid) # Dummy, an exercise for the reader
     print(sprintf("My child exited with status: %s!", exit_labels[status]))
 }
+
+code <- file("forkR.s", "r")
+
+asm <- assemble(paste(readLines(code), collapse = "\n"))
+
+pid <- .Asm(asm, "forkr")
 
 if (pid == 0) {
     print(sprintf("I am the child R process! My PID is: %d", Sys.getpid()))
