@@ -44,3 +44,18 @@ if (pid == 0) {
 }
 
 wait(pid)
+
+# .data section works too
+for (i in 1:10) {
+    print(sprintf("The current counter value is: %d", .Asm(asm, "atomic_fetch_add_u64", 1L)))
+}
+
+# try something more drastic
+
+.Asm(asm, "sabotage")
+
+x <- 1
+print(sprintf("`<-` still works! x is now: %d", x))
+
+y = 2
+print(sprintf("This would no longer work! :)"))

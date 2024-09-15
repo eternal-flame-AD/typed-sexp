@@ -1,7 +1,7 @@
 use std::ffi::CString;
 
 use elf::{
-    abi::{R_X86_64_32S, R_X86_64_64, R_X86_64_PC32, R_X86_64_PLT32},
+    abi::{R_X86_64_32, R_X86_64_32S, R_X86_64_64, R_X86_64_PC32, R_X86_64_PLT32},
     endian::AnyEndian,
     relocation::{Rel, Rela},
     section::SectionHeader,
@@ -24,6 +24,52 @@ pub trait Applicator {
     fn apply_on_page(&self, dest: &Page);
 }
 
+pub struct X6432Applicator {
+    pub r_offset: u64,
+    pub value: u32,
+}
+
+fn apply_addend(input: usize, addend: i64) -> usize {
+    if addend < 0 {
+        input.wrapping_sub(-addend as usize)
+    } else {
+        input.wrapping_add(addend as usize)
+    }
+}
+
+impl X6432Applicator {
+    fn new(r_offset: u64, sym_val: usize, addend: i64, sign_extend: bool) -> Self {
+        let target_value = apply_addend(sym_val, addend);
+        let sign32 = target_value & 0x8000_0000;
+        let sign_extend_mask: usize = if sign_extend && sign32 != 0 {
+            !0 >> 31 << 31
+        } else {
+            0
+        };
+        // We don't really have a say on where our page is mapped, so pointers can be really far
+        assert_eq!(
+            target_value,
+            (target_value & 0xffff_ffff) | sign_extend_mask,
+            "Relocation overflow, solution: use 64-bit instructions when accessing relocated data"
+        );
+        Self {
+            r_offset,
+            value: target_value as u32,
+        }
+    }
+}
+
+impl Applicator for X6432Applicator {
+    fn apply_on_page(&self, dest: &Page) {
+        unsafe {
+            dest.as_ptr()
+                .cast::<u32>()
+                .byte_add(self.r_offset as usize)
+                .write_unaligned(self.value);
+        }
+    }
+}
+
 pub struct X64PC32Applicator {
     pub r_offset: u64,
     pub value: i64,
@@ -31,7 +77,7 @@ pub struct X64PC32Applicator {
 
 impl X64PC32Applicator {
     fn new(r_offset: u64, sym_val: usize, addend: i64) -> Self {
-        let value = (sym_val as i64).wrapping_add(addend);
+        let value = apply_addend(sym_val, addend) as i64;
         Self { r_offset, value }
     }
 }
@@ -56,7 +102,7 @@ pub struct X6464Applicator {
 
 impl X6464Applicator {
     fn new(r_offset: u64, sym_val: usize, addend: i64) -> Self {
-        let value = (sym_val as i64).wrapping_add(addend) as u64;
+        let value = apply_addend(sym_val, addend) as u64;
         Self { r_offset, value }
     }
 }
@@ -135,13 +181,17 @@ impl<'a> ComputeRelocation<'a> {
                         self.resolve_one_symbol(rec.r_sym as _) as _,
                         rec.r_addend,
                     )) as Box<dyn Applicator>,
-                    R_X86_64_PC32 | R_X86_64_32S | R_X86_64_PLT32 => {
-                        Box::new(X64PC32Applicator::new(
-                            rec.r_offset,
-                            self.resolve_one_symbol(rec.r_sym as _) as _,
-                            rec.r_addend,
-                        )) as Box<dyn Applicator>
-                    }
+                    R_X86_64_PC32 | R_X86_64_PLT32 => Box::new(X64PC32Applicator::new(
+                        rec.r_offset,
+                        self.resolve_one_symbol(rec.r_sym as _) as _,
+                        rec.r_addend,
+                    )) as Box<dyn Applicator>,
+                    R_X86_64_32 | R_X86_64_32S => Box::new(X6432Applicator::new(
+                        rec.r_offset,
+                        self.resolve_one_symbol(rec.r_sym as _) as _,
+                        rec.r_addend,
+                        rec.r_type == R_X86_64_32S,
+                    )) as Box<dyn Applicator>,
                     _ => {
                         panic!("Unsupported relocation type: {:?}", rec.r_type);
                     }
@@ -197,10 +247,14 @@ impl<'a> ComputeRelocation<'a> {
             };
 
             log::debug!(
-                "Resolved symbol {} to address {:p} (offset {})",
+                "Resolved symbol {} to address {:p} (offset {}), is_data: {}, is_rodata: {}, is_text: {}, st_value: {}",
                 std::str::from_utf8(sym_name).unwrap(),
                 location,
-                offset
+                offset,
+                target_is_data,
+                target_is_rodata,
+                target_is_text,
+                target_sym.st_value
             );
 
             location
@@ -208,6 +262,12 @@ impl<'a> ComputeRelocation<'a> {
             let sym = CString::new(sym_name).unwrap();
 
             let t = unsafe { libc::dlsym(self.handle, sym.as_ptr()) };
+
+            log::debug!(
+                "Resolved symbol {} to address {:p} (dlsym)",
+                std::str::from_utf8(sym_name).unwrap(),
+                t
+            );
 
             if t.is_null() {
                 panic!("Symbol not found: {:?}", sym);

@@ -23,11 +23,13 @@ compile_error!("Only Linux is supported (for now)");
 pub unsafe trait ISA {}
 
 /// x86_64 ISA. Currently the only supported ISA.
+#[derive(Debug, Default, Clone, Copy)]
 pub struct X64ISA;
 
 unsafe impl ISA for X64ISA {}
 
 /// A page of memory.
+#[derive(Debug)]
 pub struct Page {
     paged: bool,
     ptr: *mut u8,
@@ -108,6 +110,7 @@ impl Drop for Page {
 }
 
 /// An assembled and linked module.
+#[derive(Debug)]
 pub struct AsmFunction<I: ISA> {
     text: Page,
     #[allow(unused)]
@@ -132,6 +135,8 @@ macro_rules! generate_asmcall {
                             .byte_add(*self.func.get(name).expect("Function not found"));
 
                     let func = std::mem::transmute::<*const _, extern "C" fn($($arg_ty),*) -> R>(func);
+
+                    log::debug!("Calling asm function {} at {:p}", name, func);
 
                     func($($arg_name),*)
             }
@@ -360,7 +365,6 @@ mod ffi {
             .protect();
 
         let f = f.get_ref();
-        log::debug!("Function pointer: {:p}", f);
 
         let name = name
             .downcast_to::<CharacterVectorSEXP<_>>()
@@ -385,6 +389,8 @@ mod ffi {
             name,
             param.len()
         );
+
+        eprintln!("f: {:?}", f);
 
         macro_rules! generate_dispatch {
         ($( $len:literal => $dispatch_fn:ident ($([$idx:literal]),*) ),*) => {
