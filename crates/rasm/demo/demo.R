@@ -13,7 +13,7 @@ assemble <- function(asm, flavor = "nasm") {
     .Call("asm_call", box, name, list(...))
 }
 
-code <- file("forkR.S", "r")
+code <- file("forkR.s", "r")
 
 asm <- assemble(paste(readLines(code), collapse = "\n"))
 
