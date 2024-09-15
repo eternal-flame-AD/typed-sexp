@@ -272,6 +272,7 @@ impl<I: ISA> AsmFunction<I> {
 
         let output = std::process::Command::new("nasm")
             .arg("-felf64")
+            .arg("-Wreloc-abs-dword")
             .arg("-o")
             .arg(&tmp_output)
             .arg(&tmp_input)
