@@ -6,6 +6,8 @@ Build instructions:
 
 ## rasm
 
+Joke project and also serves as a testbed for the stability of this library.
+
 Inline assembler for R. 
 
 [Blog Post](https://yumechi.jp/en/blog/2024/dynamically-load-assembler-code-in-r/)
