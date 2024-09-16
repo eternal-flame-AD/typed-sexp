@@ -1,3 +1,18 @@
+dyn.load("../../../target/debug/librasm.so")
+
+invisible(.Call("init_rustlog"))
+
+assemble <- function(asm, flavor = "nasm") {
+    if (flavor != "nasm") {
+        stop("Only NASM is supported at the moment!")
+    }
+    .Call("assemble", asm)
+}
+
+.Asm <- function(box, name, ...) {
+    .Call("asm_call", box, name, list(...))
+}
+
 code <- file("sabotageR.s", "r")
 
 asm <- assemble(paste(readLines(code), collapse = "\n"))
@@ -17,6 +32,3 @@ tryCatch({
 }, finally = {
     print(sprintf("y is still: %d", y)) # y is still: 0
 })
-
-# Error in y = 2 : This is R, use <- instead of `=` :D
-# Execution halted

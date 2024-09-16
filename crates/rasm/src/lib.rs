@@ -2,6 +2,8 @@
 //!
 //! Rasm is a simple library that allows you to assemble x86_64 assembly code and call it from R.
 #![warn(missing_docs)]
+#[cfg(not(feature = "clobber_less"))]
+use std::arch::asm;
 use std::{alloc::Layout, collections::HashMap, ffi::c_int, marker::PhantomPinned};
 
 mod relocate;
@@ -127,8 +129,7 @@ macro_rules! generate_asmcall {
     ($($name:ident( $( $arg_name:ident: $arg_ty:ident ),*))*) => {
         $(
             /// Call a function by name.
-            #[cfg_attr(feature = "clobber_less", inline(never))] // let Rust clean up the registers as this function returns
-            #[cfg_attr(not(feature = "clobber_less"), inline)]
+            #[inline(always)]
             pub unsafe fn $name<R $(, $arg_ty)*>(&self, name: &str $(, $arg_name: $arg_ty)*) -> R {
                     let func =
                         self.text.as_ptr()
@@ -138,7 +139,18 @@ macro_rules! generate_asmcall {
 
                     log::debug!("Calling asm function {} at {:p}", name, func);
 
-                    func($($arg_name),*)
+                    let ret = func($($arg_name),*);
+
+                    #[cfg(not(feature = "clobber_less"))]
+                    asm!("",
+                        lateout("r12") _,
+                        lateout("r13") _,
+                        lateout("r14") _,
+                        lateout("r15") _,
+                        options(nostack, nomem, preserves_flags)
+                    );
+
+                    ret
             }
         )*
     }
@@ -390,8 +402,6 @@ mod ffi {
             name,
             param.len()
         );
-
-        eprintln!("f: {:?}", f);
 
         macro_rules! generate_dispatch {
         ($( $len:literal => $dispatch_fn:ident ($([$idx:literal]),*) ),*) => {
