@@ -32,7 +32,7 @@ impl<T: HasSEXP, W> Ptr<T, W> {
             }
         }
     }
-    /// [`wrap`] a [`Pin<Box<T>>`] into an external pointer.
+    /// [`Ptr::wrap`] a [`Pin<Box<T>>`] into an external pointer.
     pub fn wrap_boxed<U: HasSEXP, V: JustSEXP>(ptr: Box<W>, tag: V, prot: U) -> Self
     where
         T: JustSEXP,

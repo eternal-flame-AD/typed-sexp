@@ -1,20 +1,31 @@
 [package]
 name = "typed-sexp"
-version = "0.1.0"
-edition = "2021"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Rust library for working with R's SEXP type in a type-safe way."
+
 
 [dependencies]
-derive_more = { version = "1.0.0", features = ["deref", "deref_mut"] }
-itertools = "0.13.0"
+derive_more = { version = "1", features = ["deref"] }
+itertools = "0.13"
 libR-sys = "0.7"
 
 [features]
-default = []
+default = ["checked_protect_stack"]
 checked_protect_stack = []
 embedded = []
 
 [workspace]
 members = ["crates/embedded-demo", "crates/extension-demo", "crates/rasm"]
+
+[workspace.package]
+version = "0.0.1"
+authors = ["eternal-flame-AD <yume@yumechi.jp>"]
+license = "Apache-2.0"
+repository = "https://github.com/eternal-flame-AD/typed-sexp"
+edition = "2021"
 
 [workspace.dependencies]
 typed-sexp = { path = "." }

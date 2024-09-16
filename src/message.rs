@@ -52,7 +52,7 @@ impl<T, E: Debug> UnwrapR for Result<T, E> {
 /// Emit an error message and stop execution.
 pub fn r_error_c(msg: &CStr) -> ! {
     unsafe {
-        Rf_error("%s\0".as_ptr() as *const i8, msg.as_ptr() as *const i8, 0);
+        Rf_error("%s\0".as_ptr() as *const i8, msg.as_ptr(), 0);
     };
 }
 

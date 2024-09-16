@@ -13,6 +13,9 @@
 //!   - Macros hide the actual code that is being generated.
 //!
 //! This library is an attempt to provide a type-safe interface to R's SEXP objects without any user-exposed macros.
+//! However it is not a goal to provide a high-level abstractions over R's API like `Rcpp` or `extendr`, the most I will do is type-safe indexing, attributes, calling functions, etc.
+//! Users are expected to have a general understanding of R internals.
+//! Here is a quick [tutorial](https://github.com/hadley/r-internals).
 //!
 //! ## Features
 //!

@@ -180,7 +180,9 @@ impl<T: HasSEXP> Drop for Protected<T> {
         unsafe {
             Rf_unprotect(1);
             #[cfg(feature = "checked_protect_stack")]
-            PROTECT_STACK_CHECK.checked_pop(self.inner.get_sexp());
+            if let Some(inner) = self.inner.as_ref() {
+                PROTECT_STACK_CHECK.checked_pop(inner.get_sexp());
+            }
         }
     }
 }
@@ -226,6 +228,10 @@ unsafe impl<T: HasSEXP> ProtectedSEXP for Protected<T> {
     type Inner = T;
 
     fn forget(mut self) -> T {
+        #[cfg(feature = "checked_protect_stack")]
+        unsafe {
+            PROTECT_STACK_CHECK.checked_pop(self.inner.as_ref().unwrap().get_sexp())
+        };
         self.inner.take().unwrap()
     }
 
